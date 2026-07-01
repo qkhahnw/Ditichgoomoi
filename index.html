@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Công Trình Số Hóa Di Tích Lịch Sử Gò Ô Môi</title>
+    <style>
+        /* CSS CHUNG & FONT */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Montserrat', sans-serif; background-color: #f4f6f9; color: #333; overflow: hidden; touch-action: none; }
+
+        /* HEADER CHỨA LOGO VÀ TIÊU ĐỀ */
+        header {
+            background: linear-gradient(90deg, #0a3d91 0%, #1557c0 100%);
+            color: white; padding: 12px 20px; 
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; z-index: 100;
+            min-height: 110px; 
+        }
+        
+        /* KHU VỰC CHỨA LOGO BÊN TRÁI HEADER */
+        .header-left {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%); 
+            display: flex; gap: 25px; align-items: flex-start;
+        }
+
+        /* KHU VỰC CHỨA LOGO BÊN PHẢI HEADER */
+        .header-right {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%); 
+            display: flex; align-items: flex-start;
+        }
+
+        .logo-group {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+        }
+
+        .logo-row {
+            display: flex; gap: 6px;
+        }
+
+        .logo-row img { 
+            width: 45px; height: 45px; border-radius: 50%; object-fit: contain; 
+            background: white; padding: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+
+        .logo-caption {
+            font-size: 10px; font-weight: 700; color: #ffdd00; text-transform: uppercase; 
+            letter-spacing: 0.5px; text-align: center; line-height: 1.3;
+        }
+        
+        /* TÊN DI TÍCH ÉP GIỮA */
+        .title-container { text-align: center; z-index: 10; pointer-events: none; }
+        .title-container h1 { font-size: 24px; text-transform: uppercase; letter-spacing: 1px; color: #ffdd00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); font-weight: 700; margin: 0;}
+
+        /* FOOTER NGUỒN CÔNG TRÌNH */
+        #footer-credit {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(10, 61, 145, 0.95); color: #fff;
+            text-align: center; padding: 10px; font-size: 14px; font-weight: 600;
+            z-index: 300; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+        }
+        #footer-credit span { color: #ffdd00; }
+
+        /* VÙNG TƯƠNG TÁC CHÍNH */
+        main { 
+            position: relative; width: 100vw; height: calc(100vh - 145px); 
+            background: #e0e5ec; overflow: hidden; display: flex; justify-content: center; align-items: center; cursor: grab;
+        }
+        main:active { cursor: grabbing; }
+
+        #map-container {
+            position: relative; display: inline-block; line-height: 0; 
+            transform-origin: center center; transition: transform 0.1s ease-out; will-change: transform;
+        }
+        
+        #model-image { 
+            max-width: 95vw; max-height: 75vh; width: 100%; height: auto; 
+            display: block; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); pointer-events: none; background-color: #ccc; 
+        }
+
+        /* CÁC ĐIỂM GHIM (PINS) */
+        .pin {
+            position: absolute; width: 32px; height: 32px; background-color: #e74c3c;
+            border-radius: 50% 50% 50% 0; 
+            transform: translate(-50%, -100%) rotate(-45deg); 
+            transform-origin: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); transition: 0.2s; z-index: 10;
+        }
+        .pin::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 9px; left: 9px; }
+        .pin:hover, .pin:active { transform: translate(-50%, -100%) rotate(-45deg) scale(1.3); background-color: #c0392b; z-index: 20;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231,76,60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231,76,60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231,76,60, 0); } }
+        .pin { animation: pulse 2s infinite; }
+
+        /* TỌA ĐỘ GHIM */
+        #pin-congvao { top: 48%; left: 61%; }
+        #pin-mobaong { top: 38%; left: 52%; }
+        #pin-phudieu { top: 20%; left: 53.5%; }
+        #pin-hamdukich { top: 28%; left: 79.5%; }
+        #pin-nhavesinh { top: 17%; left: 84%; }
+
+        /* MODAL CHUNG */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 400;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98); width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto;
+            border-radius: 20px; padding: 30px 40px; position: relative;
+            transform: scale(0.8) translateY(30px); transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .modal-overlay.show .modal-content { transform: scale(1) translateY(0); }
+        .close-modal-btn {
+            position: absolute; top: 15px; right: 20px; font-size: 32px; font-weight: bold;
+            color: #888; cursor: pointer; transition: 0.2s; line-height: 1; z-index: 10;
+        }
+        .close-modal-btn:hover { color: #e74c3c; transform: scale(1.1); }
+        .modal-title { color: #0a3d91; font-size: 26px; margin-bottom: 20px; border-bottom: 3px solid #ffdd00; padding-bottom: 10px; font-weight: 700; margin-right: 20px;}
+        
+        #modal-image {
+            width: 100%; max-height: 350px; object-fit: cover; border-radius: 12px; margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15); display: none;
+        }
+        .modal-body { line-height: 1.8; color: #333; font-size: 16px; text-align: justify; }
+        .modal-body p { margin-bottom: 15px; }
+
+        /* GALLERY ẢNH LƯỚI */
+        .gallery-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;
+        }
+        .gallery-grid img {
+            width: 100%; height: 140px; object-fit: cover; border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: 0.3s; cursor: pointer;
+        }
+        .gallery-grid img:hover { transform: scale(1.05); box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+
+        /* LIGHTBOX */
+        #lightbox-modal {
+            background: rgba(0, 0, 0, 0.9); z-index: 500;
+        }
+        .close-lightbox-btn {
+            position: absolute; top: 20px; right: 30px; font-size: 40px; font-weight: bold;
+            color: #fff; cursor: pointer; transition: 0.2s; z-index: 510; line-height: 1; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .close-lightbox-btn:hover { color: #ffdd00; transform: scale(1.1); }
+
+        /* NÚT CHUYỂN ẢNH */
+        .lb-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2); color: white; border: none;
+            font-size: 40px; padding: 15px 20px; cursor: pointer; border-radius: 10px;
+            transition: 0.3s; z-index: 510; backdrop-filter: blur(5px);
+        }
+        .lb-nav-btn:hover { background: rgba(255, 255, 255, 0.5); color: #ffdd00; }
+        .lb-left { left: 20px; }
+        .lb-right { right: 20px; }
+
+        /* KHUNG CHỨA ẢNH LIGHTBOX */
+        #lightbox-img-container {
+            width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+        #lightbox-img {
+            max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.2s ease-out;
+            transform-origin: center center;
+        }
+
+        /* NÚT ZOOM DƯỚI ĐÁY */
+        .lb-zoom-controls {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 15px; z-index: 510;
+        }
+        .lb-zoom-controls button {
+            background: rgba(255, 255, 255, 0.3); border: 2px solid white; color: white;
+            width: 45px; height: 45px; border-radius: 50%; font-size: 24px; font-weight: bold;
+            cursor: pointer; transition: 0.3s; backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center; line-height: 1;
+        }
+        .lb-zoom-controls button:hover { background: white; color: #0a3d91; transform: scale(1.1); }
+
+        /* CÁC NÚT MENU TRÁI MÀN HÌNH CHÍNH */
+        .menu-buttons-container {
+            position: absolute; left: 20px; top: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 90;
+        }
+        .toggle-menu-btn { 
+            background: #0a3d91; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; 
+            font-weight: 600; font-size: 15px; border: 2px solid white; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; 
+        }
+        .toggle-menu-btn:hover { background: #1557c0; transform: scale(1.05); }
+
+        /* NGÔN NGỮ BÊN TRONG CỤM MENU TRÁI */
+        .lang-switcher { position: relative; width: 100%; z-index: 100; }
+        .lang-options {
+            position: absolute; top: 110%; left: 0; background: white;
+            border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            overflow: hidden; width: 100%; min-width: 150px;
+            transform: translateY(-10px); opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .lang-switcher.active .lang-options { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .lang-opt {
+            padding: 12px 15px; color: #333; font-weight: 600; cursor: pointer; font-size: 14px;
+            display: flex; align-items: center; gap: 10px; transition: 0.2s; white-space: nowrap;
+        }
+        .lang-opt:hover { background: #f0f4fa; color: #0a3d91; }
+        .lang-opt.active-lang { background: #e0eaf5; color: #d35400; }
+
+        /* MENU TỔNG QUAN */
+        #side-menu {
+            position: absolute; top: 0; left: -100%; width: 500px; max-width: 90vw; height: 100%;
+            background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);
+            box-shadow: 5px 0 25px rgba(0,0,0,0.2); padding: 40px 30px;
+            transition: 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 95; overflow-y: auto; border-right: 1px solid rgba(0,0,0,0.1);
+        }
+        #side-menu.open { left: 0; }
+        
+        .close-menu-btn {
+            position: absolute; top: 10px; right: 20px; font-size: 32px; font-weight: bold;
+            color: #888; cursor: pointer; transition: 0.2s; line-height: 1; background: none; border: none;
+        }
+        .close-menu-btn:hover { color: #e74c3c; transform: scale(1.1); }
+        .side-menu-title { color: #0a3d91; font-size: 24px; margin-top: 10px; margin-bottom: 20px; font-weight: 700; text-transform: uppercase; border-bottom: 3px solid #ffdd00; padding-bottom: 10px; margin-right: 25px;}
+        
+        .menu-settings-block {
+            background: #f4f6f9; padding: 15px; border-radius: 12px; margin-bottom: 25px;
+            border: 1px solid #dcdde1; display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .voice-control-inline .voice-header { font-weight: 700; color: #0a3d91; font-size: 13px; text-transform: uppercase; margin-bottom: 8px; }
+        audio { width: 100%; height: 35px; outline: none; border-radius: 8px; }
+
+        .side-menu-content { line-height: 1.7; font-size: 15px; text-align: justify; color: #333; }
+        .side-menu-content h4 { color: #d35400; margin-top: 15px; margin-bottom: 8px; font-size: 16px; font-weight: 700; }
+        .side-menu-content ul { padding-left: 20px; margin-top: 5px; }
+        .side-menu-content li { margin-bottom: 8px; }
+
+        /* TỐI ƯU CHO ĐIỆN THOẠI */
+        @media (max-width: 900px) {
+            header { flex-direction: column; padding: 15px 10px; justify-content: flex-start; gap: 15px; min-height: auto;}
+            .header-left, .header-right { position: static; transform: none; flex-wrap: wrap; justify-content: center; gap: 15px; }
+            .title-container { position: static; padding-bottom: 5px;}
+            .title-container h1 { font-size: 18px; }
+            .logo-caption { max-width: 140px; }
+            
+            #footer-credit { font-size: 11px; padding: 8px 5px; }
+            main { height: calc(100vh - 200px); } 
+            
+            .menu-buttons-container { top: 15px; left: 15px; gap: 8px;}
+            .toggle-menu-btn { font-size: 12px; padding: 10px 15px; }
+
+            .pin { width: 24px; height: 24px; } .pin::after { width: 10px; height: 10px; top: 7px; left: 7px; }
+            #modal-image { max-height: 200px; } .modal-content { padding: 25px 20px; }
+            
+            .gallery-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+            .gallery-grid img { height: 100px; }
+
+            .lb-nav-btn { font-size: 24px; padding: 10px 12px; }
+            .lb-zoom-controls button { width: 35px; height: 35px; font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <div class="logo-group">
+                <div class="logo-row">
+                    <img src="images/logos/logo5.png" alt="Logo 5">
+                    <img src="images/logos/logo6.png" alt="Logo 6">
+                </div>
+                <span class="logo-caption">Phường Phú Thuận</span>
+            </div>
+        </div>
+        
+        <div class="title-container">
+            <h1 id="main-header-title">CÔNG TRÌNH SỐ HÓA DI TÍCH LỊCH SỬ GÒ Ô MÔI</h1>
+        </div>
+
+        <div class="header-right">
+            <div class="logo-group">
+                <div class="logo-row">
+                    <img src="images/logos/logo3.png" alt="Logo 3">
+                    <img src="images/logos/logo4.png" alt="Logo 4">
+                    <img src="images/logos/logo1.png" alt="Logo 1">
+                    <img src="images/logos/logo2.png" alt="Logo 2">
+                </div>
+                <span class="logo-caption" style="min-width: 250px;">Khoa Công nghệ thông tin<br>Trường Đại học Tôn Đức Thắng</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-area">
+        
+        <div class="menu-buttons-container">
+            <button class="toggle-menu-btn" id="btn-overview" onclick="openSideMenu()">☰ TỔNG QUAN DI TÍCH</button>
+            <button class="toggle-menu-btn" id="btn-gallery" onclick="openGalleryModal()">🖼 HÌNH ẢNH TẠI DI TÍCH</button>
+            
+            <div class="lang-switcher" id="lang-menu">
+                <button class="toggle-menu-btn" style="width: 100%; display: flex; justify-content: space-between; align-items: center;" onclick="toggleLangMenu()">
+                    <span id="lang-btn-text">🌐 Ngôn ngữ (language)</span> ▾
+                </button>
+                <div class="lang-options">
+                    <div class="lang-opt active-lang" onclick="changeLanguage('vi')">🇻🇳 Tiếng Việt</div>
+                    <div class="lang-opt" onclick="changeLanguage('en')">🇬🇧 English</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="side-menu">
+            <button class="close-menu-btn" onclick="closeSideMenu()">×</button>
+            <h2 class="side-menu-title" id="side-menu-title">Di Tích Lịch Sử Gò Ô Môi</h2>
+            
+            <div class="menu-settings-block">
+                <div class="voice-control-inline">
+                    <div class="voice-header" id="voice-header-text">🔊 Thuyết minh tự động</div>
+                    <audio id="audio-player" controls>
+                        <source id="audio-source" src="audio/voice-vi.mp3" type="audio/mpeg">
+                        Trình duyệt của bạn không hỗ trợ thẻ audio.
+                    </audio>
+                </div>
+            </div>
+
+            <div class="side-menu-content" id="side-menu-content">
+                </div>
+        </div>
+
+        <div id="map-container">
+            <img src="images/go-o-moi.jpg" id="model-image" alt="Mô Hình Gò Ô Môi">
+            <div class="pin" id="pin-congvao" onclick="openInfoModal('congvao')"></div>
+            <div class="pin" id="pin-mobaong" onclick="openInfoModal('mobaong')"></div>
+            <div class="pin" id="pin-phudieu" onclick="openInfoModal('phudieu')"></div>
+            <div class="pin" id="pin-hamdukich" onclick="openInfoModal('hamdukich')"></div>
+            <div class="pin" id="pin-nhavesinh" onclick="openInfoModal('nhavesinh')"></div>
+        </div>
+
+    </main>
+
+    <footer id="footer-credit">
+        </footer>
+
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal-btn" onclick="closeModal('info-modal')">×</span>
+            <h2 class="modal-title" id="modal-title">Tiêu Đề</h2>
+            <img id="modal-image" src="" alt="Hình minh họa">
+            <div class="modal-body" id="modal-text">Nội dung...</div>
+        </div>
+    </div>
+
+    <div id="gallery-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal-btn" onclick="closeModal('gallery-modal')">×</span>
+            <h2 class="modal-title" id="gallery-title">HÌNH ẢNH TẠI DI TÍCH</h2>
+            <div class="gallery-grid">
+                <img src="images/go-o-moi.jpg" alt="Ảnh 1" onclick="openLightbox(this.src)">
+                <img src="images/anh-cong-vao.jpg" alt="Ảnh 2" onclick="openLightbox(this.src)">
+                <img src="images/anh-mo-ba-ong.jpg" alt="Ảnh 3" onclick="openLightbox(this.src)">
+                <img src="images/anh-phu-dieu.jpg" alt="Ảnh 4" onclick="openLightbox(this.src)">
+                <img src="images/anh-ham-du-kich.jpg" alt="Ảnh 5" onclick="openLightbox(this.src)">
+                <img src="images/anh-nha-ve-sinh.jpg" alt="Ảnh 6" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-1.jpg" alt="Ảnh 7" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-2.jpg" alt="Ảnh 8" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-3.jpg" alt="Ảnh 9" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-4.jpg" alt="Ảnh 10" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-5.jpg" alt="Ảnh 11" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-6.jpg" alt="Ảnh 12" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-7.jpg" alt="Ảnh 13" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-8.jpg" alt="Ảnh 14" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-9.jpg" alt="Ảnh 15" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-10.jpg" alt="Ảnh 16" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-11.jpg" alt="Ảnh 17" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-12.jpg" alt="Ảnh 18" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-13.jpg" alt="Ảnh 19" onclick="openLightbox(this.src)">
+                <img src="images/anh-bo-sung-14.jpg" alt="Ảnh 20" onclick="openLightbox(this.src)">
+            </div>
+        </div>
+    </div>
+
+    <div id="lightbox-modal" class="modal-overlay">
+        <span class="close-lightbox-btn" onclick="closeLightbox()">×</span>
+        
+        <button class="lb-nav-btn lb-left" onclick="prevImage(event)">❮</button>
+        <button class="lb-nav-btn lb-right" onclick="nextImage(event)">❯</button>
+
+        <div id="lightbox-img-container">
+            <img id="lightbox-img" src="" alt="Ảnh phóng to">
+        </div>
+
+        <div class="lb-zoom-controls">
+            <button onclick="zoomLightbox(0.2, event)">+</button>
+            <button onclick="resetZoom(event)">↺</button>
+            <button onclick="zoomLightbox(-0.2, event)">-</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'vi';
+        let currentOpenModalId = null;
+
+        const translations = {
+            'vi': {
+                headerTitle: "CÔNG TRÌNH SỐ HÓA DI TÍCH LỊCH SỬ GÒ Ô MÔI",
+                btnOverview: "☰ TỔNG QUAN DI TÍCH",
+                btnGallery: "🖼 HÌNH ẢNH TẠI DI TÍCH",
+                galleryTitle: "HÌNH ẢNH TẠI DI TÍCH",
+                footer: "Công trình được thực hiện bởi <span>Ban Chỉ huy Mùa hè xanh 2026</span><br>Khoa Công nghệ thông tin - Trường Đại học Tôn Đức Thắng.",
+                voiceHeader: "🔊 THUYẾT MINH",
+                sideTitle: "Di Tích Lịch Sử Gò Ô Môi",
+                sideContent: `
+                    <h4>1. Nguồn gốc tên gọi và vị trí</h4>
+                    <p><strong>Vị trí ban đầu:</strong> Vốn là nơi ở của bà Ngô Thị Tài (bí danh Ba Lý) tại ấp Bà Bướm, xã Phú Mỹ, huyện Nhà Bè.</p>
+                    <p><strong>Tên gọi "Gò Ô Môi":</strong> Bắt nguồn từ việc trong sân nhà có trồng một cây ô môi cao khoảng 6-7m. Khu vực này còn có tên gọi khác là "Gò Chị Ba Lý".</p>
+                    <p><strong>Tên gọi "Mộ ba ông":</strong> Tên gọi này xuất hiện về sau, khi 3 chiến sĩ du kích hy sinh và được địch vùi xác chung tại căn hầm bí mật ở gò.</p>
+                    <h4>2. Bối cảnh lịch sử và sự đùm bọc của nhân dân (1962 - 1965)</h4>
+                    <p><strong>Năm 1962:</strong> Mỹ - Ngụy thực hiện chương trình ấp chiến lược, dời dân đi nơi khác nên Gò Ô Môi bị bỏ hoang, cây cỏ mọc rậm rạp.</p>
+                    <p><strong>Năm 1965:</strong> Lợi dụng địa thế này, đồng chí Hoa Văn Tân đã chọn Gò Ô Môi làm nơi đào hầm bí mật trú ẩn và lập tổ du kích gồm 3 người: Lê Văn Sắn, Hồ Văn Nhái và Nguyễn Văn Ba.</p>
+                    <p><strong>Sự ủng hộ của nhân dân:</strong> Dù bị dồn vào ấp chiến lược, người dân vẫn bất chấp hiểm nguy để tiếp tế lương thực, làm hầm, đóng nắp hầm và che chở cho các cán bộ cách mạng.</p>
+                    <h4>3. Diễn biến trận đánh bi hùng ngày 23/11/1966</h4>
+                    <p><strong>Bối cảnh:</strong> Sang năm 1966, đồng chí Tân đi họp nhận nhiệm vụ mới, để lại 3 chiến sĩ bám trụ lại gò trong hoàn cảnh địch càn quét gắt gao.</p>
+                    <p><strong>Diễn biến:</strong> Rạng sáng ngày 23/11/1966, bị tề điệp chỉ điểm, hơn 400 quân ngụy bao vây và phát hiện lỗ thông hơi của hầm bí mật sau 4 giờ đào xới.</p>
+                    <p><strong>Kết quả:</strong> 3 chiến sĩ du kích đã dũng cảm mở nắp hầm phản kích quyết liệt. Do tương quan lực lượng quá chênh lệch, cả 3 chiến sĩ đã anh dũng hy sinh.</p>
+                    <h4>4. Ý nghĩa lịch sử</h4>
+                    <ul>
+                        <li>Là trận đánh đầu tiên của lực lượng du kích hoạt động bí mật dám kiên cường chiến đấu ngay trong vùng địch kiểm soát.</li>
+                        <li>Là minh chứng cho sự anh dũng của lực lượng du kích Nhà Bè, giúp củng cố niềm tin của nhân dân đối với cách mạng, góp phần vào đại thắng mùa Xuân năm 1975.</li>
+                    </ul>
+                    <h4>5. Quá trình tôn tạo và hiện trạng khu di tích</h4>
+                    <ul>
+                        <li><strong>Sau ngày giải phóng:</strong> Chính quyền địa phương xây mộ chung cho 3 liệt sĩ tại nơi hy sinh.</li>
+                        <li><strong>Năm 1999:</strong> UBND Quận 7 trùng tu lại ngôi mộ (ốp đá xám, lập bia ghi nhận sự kiện).</li>
+                        <li><strong>Ngày 13/02/2007:</strong> Gò Ô Môi được chính thức công nhận là Di tích lịch sử cấp Thành phố.</li>
+                    </ul><br><br>
+                `
+            },
+            'en': {
+                headerTitle: "DIGITIZED GO O MOI HISTORICAL SITE",
+                btnOverview: "☰ SITE OVERVIEW",
+                btnGallery: "🖼 SITE IMAGES GALLERY",
+                galleryTitle: "IMAGES OF THE SITE",
+                footer: "Project executed by <span>Green Summer Campaign Command 2026</span><br>Faculty of Information Technology - Ton Duc Thang University.",
+                voiceHeader: "🔊 VOICEOVER",
+                sideTitle: "Go O Moi Historical Site",
+                sideContent: `
+                    <h4>1. Origin and Location</h4>
+                    <p><strong>Original location:</strong> Originally the residence of Mrs. Ngo Thi Tai (alias Ba Ly) in Ba Buom hamlet, Phu My commune, Nha Be district.</p>
+                    <p><strong>Name "Go O Moi":</strong> Named after a 6-7m tall pink shower tree (ô môi) planted in her yard. It was also known as "Go Chi Ba Ly" (Sister Ba Ly's Mound).</p>
+                    <p><strong>Name "Tomb of the Three Gentlemen":</strong> Coined later when three guerrilla fighters sacrificed their lives and were buried together by the enemy in the secret tunnel.</p>
+                    <h4>2. Historical Context & People's Protection (1962-1965)</h4>
+                    <p><strong>In 1962:</strong> The US-Diem regime implemented the strategic hamlet program, forcing civilians to relocate, leaving Go O Moi abandoned and overgrown.</p>
+                    <p><strong>In 1965:</strong> Taking advantage of the terrain, comrade Hoa Van Tan built a secret tunnel and formed a guerrilla cell of three: Le Van San, Ho Van Nhai, and Nguyen Van Ba.</p>
+                    <p><strong>Support:</strong> Despite the danger, locals secretly provided food, helped build the tunnel, and shielded the revolutionaries.</p>
+                    <h4>3. The Heroic Battle on Nov 23, 1966</h4>
+                    <p><strong>Context:</strong> In 1966, the three fighters stayed behind to guard the mound amid intense enemy sweeps.</p>
+                    <p><strong>The Battle:</strong> At dawn, tipped off by spies, over 400 enemy troops surrounded the area. After 4 hours of digging, they found the tunnel's air vent.</p>
+                    <p><strong>Outcome:</strong> The three guerrillas bravely opened the hatch and fought back. Due to heavily outnumbered forces, all three fought heroically to the death.</p>
+                    <h4>4. Historical Significance</h4>
+                    <ul>
+                        <li>The first battle where secret guerrillas dared to stand and fight directly inside an enemy-controlled zone.</li>
+                        <li>A testament to the bravery of Nha Be guerrillas, contributing to the great Spring Victory of 1975.</li>
+                    </ul>
+                    <h4>5. Restoration and Current Status</h4>
+                    <ul>
+                        <li><strong>After Liberation:</strong> Local authorities built a joint tomb for the 3 martyrs at the site of their sacrifice.</li>
+                        <li><strong>In 1999:</strong> District 7 People's Committee restored the tomb respectfully.</li>
+                        <li><strong>In 2007:</strong> Officially recognized as a City-level Historical Monument.</li>
+                    </ul><br><br>
+                `
+            }
+        };
+
+        const diTichData = {
+            'congvao': {
+                image: 'images/anh-cong-vao.jpg', 
+                vi: { title: '1. Cổng vào', content: '<p><strong>Địa chỉ:</strong> Đường Đào Trí, khu phố 2, phường Phú Thuận, TP.HCM</p><p><strong>Thời gian hoạt động:</strong> 07:30 – 17:30</p>' },
+                en: { title: '1. Entrance', content: '<p><strong>Address:</strong> Dao Tri Street, Quarter 2, Phu Thuan Ward, District 7, HCMC</p><p><strong>Operating Hours:</strong> 07:30 AM – 05:30 PM</p>' }
+            },
+            'mobaong': {
+                image: 'images/anh-mo-ba-ong.jpg', 
+                vi: { title: '2. MỘ BA ÔNG', content: '<p>Gò Ô Môi trước đây vốn là nơi ở của bà Ngô Thị Tài (bí danh Ba Lý), thuộc ấp Bà Bướm, xã Phú Mỹ, huyện Nhà Bè. Trong sân nhà có trồng một cây ô môi cao khoảng 6-7m nên được dân trong vùng gọi là Gò Ô Môi.</p><p>Vào rạng sáng ngày 23/11/1966, nơi đây đã trở thành một chứng tích lịch sử oai hùng, ghi dấu sự hy sinh dũng cảm của 3 chiến sĩ du kích: <strong>Lê Văn Sắn, Hồ Văn Nhái và Nguyễn Văn Ba</strong>. Trong một cuộc chiến không cân sức với hơn 400 quân ngụy bao vây, các anh đã chiến đấu kiên cường đến hơi thở cuối cùng. Từ đó, Gò Ô Môi còn có thêm tên gọi thân thương và trang trọng do nhân dân truyền tụng là <strong>"Mộ ba ông"</strong>.</p>' },
+                en: { title: '2. TOMB OF THE THREE GENTLEMEN', content: '<p>Go O Moi was formerly the residence of Mrs. Ngo Thi Tai (alias Ba Ly), located in Ba Buom hamlet, Phu My commune, Nha Be district. It was named after a 6-7m tall pink shower tree (ô môi) planted in the yard.</p><p>On the dawn of November 23, 1966, this place became a heroic historical monument, marking the brave sacrifice of 3 guerrilla fighters: <strong>Le Van San, Ho Van Nhai, and Nguyen Van Ba</strong>. In an unequal battle against over 400 enemy troops, they fought resiliently to their last breath. Since then, the local people have respectfully called Go O Moi the <strong>"Tomb of the Three Gentlemen"</strong>.</p>' }
+            },
+            'phudieu': {
+                image: 'images/anh-phu-dieu.jpg', 
+                vi: { title: '3. Phù điêu trang trí', content: '<p>Trang nghiêm hai bên ngôi mộ là tượng đài rặng dừa nước – biểu tượng của vùng đất Nhà Bè xưa.</p><p>Phía trên trái là mảng phù điêu đắp nổi trên nền lá dừa nước cách điệu cao 5,5m bằng chất liệu xi măng thể hiện trận đánh giữa quân địch và các chiến sĩ du kích. Phía trên phải là bia đá hoa cương màu đỏ trên nền lá dừa nước cách điệu cao 5,5m được khắc nội dung ở cả 02 mặt về sự kiện Gò Ô Môi.</p>' },
+                en: { title: '3. Decorative Relief', content: '<p>Solemnly standing on both sides of the tomb is a water coconut palm monument – the symbol of the ancient Nha Be land.</p><p>On the upper left is a 5.5m high cement relief on a stylized water coconut leaf background, depicting the battle between enemy troops and guerrilla fighters. On the upper right is a red granite stele on a 5.5m high stylized water coconut leaf background, engraved on both sides with historical information about the Go O Moi event.</p>' }
+            },
+            'hamdukich': {
+                image: 'images/anh-ham-du-kich.jpg', 
+                vi: { title: '4. Hầm du kích', content: '<p>Năm 1965, lợi dụng địa thế hoang vu um tùm do nhân dân bị Mỹ - Ngụy dồn vào ấp chiến lược, đồng chí Hoa Văn Tân đã chọn Gò Ô Môi làm căn cứ, đào hầm bí mật và thành lập tổ du kích 3 người.</p><p>Nhờ sự đùm bọc, tiếp tế đầy mưu trí của nhân dân (như gia đình ông Trì, ông Út Hí, bà Tài...) cùng bàn tay tài hoa của ông Lê Văn Kiệm đóng nắp hầm, căn hầm này đã chở che các chiến sĩ hoạt động an toàn ngay trong lòng địch cho đến trận đánh bi hùng rạng sáng ngày 23/11/1966.</p>' },
+                en: { title: '4. Guerrilla Tunnel', content: '<p>In 1965, taking advantage of the desolate and overgrown terrain when locals were forced into strategic hamlets by the US-Diem regime, comrade Hoa Van Tan chose Go O Moi as a base, digging a secret tunnel and forming a 3-person guerrilla cell.</p><p>Thanks to the brave protection and supplies from the locals (such as Mr. Tri, Mr. Ut Hi, Mrs. Tai...) and the skillful hands of Mr. Le Van Kiem who crafted the tunnel hatch, this hidden shelter protected the fighters operating right in the enemy\'s heart until the heroic battle on the dawn of November 23, 1966.</p>' }
+            },
+            'nhavesinh': {
+                image: 'images/anh-nha-ve-sinh.jpg',
+                vi: { title: '5. Khu vực Nhà vệ sinh', content: '<p>Khu vực nhà vệ sinh được bố trí phía sau công trình nhằm phục vụ nhu cầu của du khách khi đến tham quan.</p>' },
+                en: { title: '5. Restroom Area', content: '<p>The restroom area is arranged at the back of the facility to serve the needs of tourists when visiting.</p>' }
+            }
+        };
+
+        function applyLanguageContent() {
+            document.getElementById('main-header-title').innerHTML = translations[currentLang].headerTitle;
+            document.getElementById('btn-overview').innerHTML = translations[currentLang].btnOverview;
+            document.getElementById('btn-gallery').innerHTML = translations[currentLang].btnGallery;
+            document.getElementById('gallery-title').innerHTML = translations[currentLang].galleryTitle;
+            document.getElementById('side-menu-title').innerHTML = translations[currentLang].sideTitle;
+            document.getElementById('side-menu-content').innerHTML = translations[currentLang].sideContent;
+            document.getElementById('footer-credit').innerHTML = translations[currentLang].footer;
+            document.getElementById('voice-header-text').innerHTML = translations[currentLang].voiceHeader;
+            
+            // Cập nhật text của nút Ngôn ngữ nhưng vẫn giữ biểu tượng mũi tên
+            document.getElementById('lang-btn-text').innerHTML = currentLang === 'vi' ? '🌐 Ngôn ngữ' : '🌐 Language';
+            
+            document.getElementById('pin-congvao').title = diTichData['congvao'][currentLang].title;
+            document.getElementById('pin-mobaong').title = diTichData['mobaong'][currentLang].title;
+            document.getElementById('pin-phudieu').title = diTichData['phudieu'][currentLang].title;
+            document.getElementById('pin-hamdukich').title = diTichData['hamdukich'][currentLang].title;
+            document.getElementById('pin-nhavesinh').title = diTichData['nhavesinh'][currentLang].title;
+
+            if (currentOpenModalId) {
+                document.getElementById('modal-title').innerHTML = diTichData[currentOpenModalId][currentLang].title;
+                document.getElementById('modal-text').innerHTML = diTichData[currentOpenModalId][currentLang].content;
+            }
+
+            let audioPlayer = document.getElementById('audio-player');
+            let audioSource = document.getElementById('audio-source');
+            let isPlaying = !audioPlayer.paused; 
+            
+            if (currentLang === 'vi') { audioSource.src = 'audio/voice-vi.mp3'; }
+            else { audioSource.src = 'audio/voice-en.mp3'; }
+            
+            audioPlayer.load();
+            if (isPlaying) { audioPlayer.play().catch(e => console.log("Autoplay bị chặn")); }
+        }
+
+        function toggleLangMenu() { document.getElementById('lang-menu').classList.toggle('active'); }
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-opt').forEach(el => el.classList.remove('active-lang'));
+            event.currentTarget.classList.add('active-lang');
+            document.getElementById('lang-menu').classList.remove('active');
+            applyLanguageContent();
+        }
+
+        applyLanguageContent();
+        
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#lang-menu')) { document.getElementById('lang-menu').classList.remove('active'); }
+        });
+
+        /* --- QUẢN LÝ MODAL INFO & GALLERY --- */
+        function openInfoModal(id) {
+            currentOpenModalId = id;
+            document.getElementById('modal-title').innerHTML = diTichData[id][currentLang].title;
+            document.getElementById('modal-text').innerHTML = diTichData[id][currentLang].content;
+            let modalImg = document.getElementById('modal-image');
+            if(diTichData[id].image && diTichData[id].image !== '') {
+                modalImg.src = diTichData[id].image; modalImg.style.display = 'block'; 
+            } else { modalImg.style.display = 'none'; }
+            document.getElementById('info-modal').classList.add('show');
+        }
+
+        function openGalleryModal() { document.getElementById('gallery-modal').classList.add('show'); }
+        
+        function closeModal(modalId) { 
+            document.getElementById(modalId).classList.remove('show'); 
+            if(modalId === 'info-modal') currentOpenModalId = null; 
+        }
+
+        /* --- LOGIC LIGHTBOX MỚI (SLIDER & ZOOM) --- */
+        let currentImageIndex = 0;
+        let galleryImages = [];
+        let lbScale = 1;
+        
+        // Lấy danh sách toàn bộ ảnh trong gallery khi trang tải xong
+        window.addEventListener('DOMContentLoaded', () => {
+            const imgs = document.querySelectorAll('.gallery-grid img');
+            galleryImages = Array.from(imgs).map(img => img.getAttribute('src'));
+        });
+
+        function openLightbox(src) {
+            currentImageIndex = galleryImages.indexOf(src); // Tìm vị trí ảnh đang click
+            resetZoom(); // Đưa ảnh về kích thước gốc
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox-modal').classList.add('show');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-modal').classList.remove('show');
+            resetZoom();
+        }
+
+        // Chuyển ảnh tiếp theo
+        function nextImage(e) {
+            if(e) e.stopPropagation(); // Ngăn click nhầm ra ngoài modal
+            currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+            document.getElementById('lightbox-img').src = galleryImages[currentImageIndex];
+            resetZoom();
+        }
+
+        // Chuyển ảnh trước đó
+        function prevImage(e) {
+            if(e) e.stopPropagation();
+            currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+            document.getElementById('lightbox-img').src = galleryImages[currentImageIndex];
+            resetZoom();
+        }
+
+        // Xử lý Phóng to / Thu nhỏ
+        function zoomLightbox(step, e) {
+            if(e) e.stopPropagation();
+            lbScale += step;
+            if (lbScale < 0.5) lbScale = 0.5; // Thu nhỏ tối đa
+            if (lbScale > 4) lbScale = 4;     // Phóng to tối đa
+            document.getElementById('lightbox-img').style.transform = `scale(${lbScale})`;
+        }
+
+        function resetZoom(e) {
+            if(e) e.stopPropagation();
+            lbScale = 1;
+            document.getElementById('lightbox-img').style.transform = `scale(1)`;
+        }
+
+        // Bắt sự kiện lăn chuột (Cuộn chuột lên để zoom in, cuộn xuống để zoom out)
+        document.getElementById('lightbox-modal').addEventListener('wheel', function(e) {
+            if (this.classList.contains('show')) {
+                e.preventDefault();
+                let step = (e.deltaY < 0) ? 0.1 : -0.1;
+                zoomLightbox(step);
+            }
+        });
+
+        function openSideMenu() { document.getElementById('side-menu').classList.add('open'); }
+        function closeSideMenu() { document.getElementById('side-menu').classList.remove('open'); }
+
+        // Bấm ra ngoài vùng tối để đóng các Modal
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay') && event.target.id !== 'lightbox-modal') { 
+                event.target.classList.remove('show');
+                if(event.target.id === 'info-modal') currentOpenModalId = null;
+            }
+        }
+
+        /* --- LOGIC KÉO THẢ, ZOOM TRÊN MAP --- */
+        const mainArea = document.getElementById('main-area');
+        const container = document.getElementById('map-container');
+        let scale = 1, panning = false, pointX = 0, pointY = 0;
+        let start = { x: 0, y: 0 }; let initialPinchDistance = null; let initialScale = 1;
+
+        function setTransform() { container.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+
+        mainArea.onmousedown = function (e) {
+            if(e.target.closest('#side-menu') || e.target.closest('.menu-buttons-container') || e.target.closest('.pin') || e.target.closest('.modal-content') || e.target.closest('#footer-credit') || e.target.closest('#lightbox-modal')) return;
+            e.preventDefault(); start = { x: e.clientX - pointX, y: e.clientY - pointY }; panning = true; container.style.transition = 'none';
+        }
+        window.onmouseup = function () { panning = false; container.style.transition = 'transform 0.1s ease-out'; }
+        mainArea.onmouseleave = function () { panning = false; }
+        mainArea.onmousemove = function (e) {
+            if (!panning) return; e.preventDefault();
+            pointX = (e.clientX - start.x); pointY = (e.clientY - start.y); setTransform();
+        }
+        mainArea.onwheel = function (e) {
+            if(e.target.closest('#side-menu') || e.target.closest('.modal-content') || e.target.closest('#footer-credit') || e.target.closest('#lightbox-modal')) return;
+            e.preventDefault(); let zoomFactor = ((e.wheelDelta ? e.wheelDelta : -e.deltaY) > 0) ? 1.1 : 0.9;
+            scale *= zoomFactor; if (scale > 3) scale = 3; if (scale < 0.5) scale = 0.5; setTransform();
+        }
+
+        mainArea.addEventListener('touchstart', function(e) {
+            if(e.target.closest('#side-menu') || e.target.closest('.menu-buttons-container') || e.target.closest('.pin') || e.target.closest('.modal-content') || e.target.closest('#footer-credit') || e.target.closest('#lightbox-modal')) return;
+            if (e.touches.length === 1) {
+                panning = true; start = { x: e.touches[0].clientX - pointX, y: e.touches[0].clientY - pointY }; container.style.transition = 'none';
+            } else if (e.touches.length === 2) {
+                panning = false; initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                initialScale = scale; container.style.transition = 'none';
+            }
+        }, {passive: false});
+
+        mainArea.addEventListener('touchmove', function(e) {
+            if(e.target.closest('#side-menu') || e.target.closest('.modal-content') || e.target.closest('#footer-credit') || e.target.closest('#lightbox-modal')) return;
+            e.preventDefault(); 
+            if (panning && e.touches.length === 1) {
+                pointX = (e.touches[0].clientX - start.x); pointY = (e.touches[0].clientY - start.y); setTransform();
+            } else if (e.touches.length === 2 && initialPinchDistance) {
+                let currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                scale = initialScale * (currentDistance / initialPinchDistance);
+                if (scale > 3) scale = 3; if (scale < 0.5) scale = 0.5; setTransform();
+            }
+        }, {passive: false});
+
+        mainArea.addEventListener('touchend', function() { panning = false; initialPinchDistance = null; container.style.transition = 'transform 0.1s ease-out'; });
+    </script>
+</body>
+</html>
